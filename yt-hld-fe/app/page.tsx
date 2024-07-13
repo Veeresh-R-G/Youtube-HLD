@@ -1,12 +1,42 @@
 'use client'
 import Image from "next/image";
-import { useEffect, useState, useRef } from "react";
+import { useState } from "react";
 import ReactPlayer from "react-player/lazy";
+import axios from 'axios'
 
 
 export default function Home() {
 
+  const [file, setFile] = useState<any>(null)
   const [url, setUrl] = useState<string | any>('https://www.youtube.com/watch?v=LXb3EKWsInQ')
+
+
+  const handleSubmit = (event: any) => {
+    event.preventDefault()
+
+    const formdata = new FormData()
+    formdata.append('file', file)
+
+    console.log(formdata);
+
+
+    axios.post("http://localhost:3000/api/v1/upload", formdata, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+      .then((res) => {
+        console.log(res)
+        alert("Successfully File uploaded")
+      })
+      .catch((error) => {
+        console.log(`Couldn't Upload file : ${error}`);
+        alert("Couldn't upload file")
+      })
+  }
+
+
+
   return (
     <main className="flex flex-col items-center justify-between p-24">
       <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
@@ -61,6 +91,23 @@ export default function Home() {
 
       <div className="video-rendering mb-20">
         <ReactPlayer url={url} playing={true} loop={true} controls={true} pip={true} />
+      </div>
+
+
+      <div>
+        <h1>---- Upload Video ----</h1>
+
+        <form onSubmit={handleSubmit}>
+
+          <input onChange={(event) => {
+            if (event.target.files) {
+              setFile(event.target.files[0]);
+            }
+          }} type="file" placeholder="upload video here" />
+          <button className="bg-white px-3 py-1 block mt-2 text-black rounded-2xl" onClick={handleSubmit}>
+            Upload File
+          </button>
+        </form>
       </div>
 
 
