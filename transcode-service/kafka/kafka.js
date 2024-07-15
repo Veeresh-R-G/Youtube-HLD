@@ -1,56 +1,78 @@
-import { Kafka } from "kafkajs";
-import fs from "fs";
-import path from "path";
+const { Kafka } = require("kafkajs");
 
 class KafkaConfig {
   constructor() {
     this.kafka = new Kafka({
-      clientId: "yt-uploader",
+      clientId: "yt-app",
       brokers: ["192.168.0.108:9092"],
     });
 
     this.producer = this.kafka.producer();
-    this.consumer = this.kafka.consumer({ groupId: "user - 1" });
+    this.consumer = this.kafka.consumer({ groupId: "group - 1" });
   }
 
   async produce(topic, messages) {
-    try {
-      const result = await this.producer.connect();
-      console.log(`Kafka Producer connected ...  ${result}`);
+    const producer = this.kafka.producer();
 
-      await this.producer.send({
-        topic: topic,
-        messages: messages,
-      });
-    } catch (err) {
-      console.log(`Error while producing : ${err}`);
-    } finally {
-      await this.producer.disconnect();
-    }
+    console.log("Producer Connecting");
+    await producer.connect();
+    console.log("Producer Connected");
+
+    await producer.send({
+      topic: topic,
+      messages: [
+        {
+          partition: 1,
+          key: "kafka-connect",
+          value: JSON.stringify({ name: "hola", location: "SOUTH" }),
+        },
+      ],
+    });
+
+    console.log("TOPIC Message Sent !!!");
+
+    await producer.disconnect();
   }
 
   async consume(topic, callback) {
-    try {
-      const result = await this.consumer.connect();
-      console.log(`Consumer Connected : ${result}`);
+    const consumer = this.kafka.consumer({ groupId: "user - 1" });
 
-      await this.consumer.subscribe({
-        topics: [topic],
-        fromBeginning: true,
-      });
+    await consumer.connect();
 
-      await this.consumer.run({
-        eachMessage: async ({ topic, partition, message }) => {
-          const value = message.value.toString();
-          callback(value);
+    await consumer.subscribe({
+      topics: [topic],
+      fromBeginning: true,
+    });
+
+    await consumer.run({
+      eachMessage: async ({ topic, partition, message, heartbeat, pause }) => {
+        console.log(`[${topic}] ${partition} ${message.value.toString()}`);
+      },
+    });
+  }
+
+  async init() {
+    const admin = this.kafka.admin();
+    console.log("Connecting to Admin");
+    await admin.connect();
+    console.log("Admin Connected !!");
+
+    console.log("Creating topic [transcode]");
+    await admin.createTopics({
+      topics: [
+        {
+          topic: "transcode",
+          numPartitions: 2,
         },
-      });
-    } catch (err) {
-      console.log(`Error while consuming : ${err}`);
-    } finally {
-      this.consumer.disconnect();
-    }
+      ],
+    });
+    console.log("Topic [transcode] Created");
+
+    await admin.disconnect();
+    console.log("Disconnecting Admin !!");
   }
 }
 
-export default KafkaConfig;
+module.exports = {
+  KafkaConfig,
+};
