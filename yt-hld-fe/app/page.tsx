@@ -35,8 +35,7 @@ export default function Home() {
 
       //100 MB chunks
       const chunkSize = 1024 * 1024 * 100
-      //860 * 1024
-      // const chunkSize = 1024 * 100
+
       const totalChunks = Math.ceil(file.size / chunkSize)
       console.log(`totalChunks = ${totalChunks} fileSize = ${file.size}`);
 
@@ -67,9 +66,9 @@ export default function Home() {
         uploadPromises.push(uploadPromise.data)
       }
 
-      // console.log(uploadPromises)
+      //Helps to Resolve all promises con-currently
       const uploadResults = await Promise.all(uploadPromises)
-      // console.log(uploadResults);
+
 
 
       const completedRes = await axios.post("http://localhost:3000/api/v1/complete", {
@@ -141,9 +140,9 @@ export default function Home() {
       </button>
 
 
-      <div className="video-rendering mb-20">
+      {/* <div className="video-rendering mb-20">
         <ReactPlayer url={url} playing={true} loop={true} controls={true} pip={true} />
-      </div>
+      </div> */}
 
 
       <div>
@@ -161,11 +160,6 @@ export default function Home() {
           </button>
         </form>
       </div>
-
-
-
-
-
     </main>
   );
 }
