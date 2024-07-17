@@ -11,28 +11,71 @@ export default function Home() {
   const [url, setUrl] = useState<string | any>('https://www.youtube.com/watch?v=LXb3EKWsInQ')
 
 
-  const handleSubmit = (event: any) => {
+  const handleSubmit = async (event: any) => {
     event.preventDefault()
 
-    const formdata = new FormData()
-    formdata.append('file', file)
 
-    console.log(formdata);
+    try {
+
+      const initFormData = new FormData()
+      initFormData.append("filename", file.name)
+
+      const initRes = await axios.post("http://localhost:3000/api/v1/initialize", initFormData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+
+      const { uploadID } = initRes.data;
+      console.log(`Upload ID = ${uploadID}`);
 
 
-    axios.post("http://localhost:3000/api/v1/upload", formdata, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
+
+      //100 MB chunks
+      const chunkSize = 1024 * 1024 * 100
+      const totalChunks = Math.ceil(file.size / chunkSize)
+
+
+      let start = 0
+      let uploadPromises = [];
+
+      for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+        const chunk = file.slice(start, start + chunkSize)
+        start += chunkSize
+
+        const formdata = new FormData()
+        formdata.append('filename', file.name)
+        formdata.append('chunk', chunk)
+        formdata.append("chunkindex", chunkIndex.toString())
+
+        console.log(`Uploading Chunk = ${chunkIndex + 1} of ${totalChunks}`);
+
+
+        const uploadPromise = await axios.post("http://localhost:3000/api/v1/upload", formdata, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        })
+
+        uploadPromises.push(uploadPromise)
       }
-    })
-      .then((res) => {
-        console.log(res)
-        alert("Successfully File uploaded")
+
+      await Promise.all(uploadPromises)
+
+      const completedRes = await axios.post("http://localhost:3000/api/v1/complete", {
+        filename: file.name,
+        totalChunks: totalChunks,
+        uploadId: uploadID,
       })
-      .catch((error) => {
-        console.log(`Couldn't Upload file : ${error}`);
-        alert("Couldn't upload file")
-      })
+
+      console.log(completedRes.data);
+
+    }
+    catch (err) {
+      console.log("Error while doing multipart upload");
+
+
+    }
   }
 
 
