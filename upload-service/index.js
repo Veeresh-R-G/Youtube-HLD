@@ -5,6 +5,7 @@ const routes = require("./routes/upload-route");
 
 const app = express();
 
+app.use(bodyParser.json());
 app.use(
   cors({
     allowedHeaders: ["*"],

@@ -20,6 +20,7 @@ export default function Home() {
       const initFormData = new FormData()
       initFormData.append("filename", file.name)
 
+      //initialise the multipart upload on the backend
       const initRes = await axios.post("http://localhost:3000/api/v1/initialize", initFormData, {
         headers: {
           'Content-Type': 'multipart/form-data'
@@ -27,13 +28,17 @@ export default function Home() {
       })
 
       const { uploadID } = initRes.data;
+      alert(`Upload ID = ${uploadID}`)
       console.log(`Upload ID = ${uploadID}`);
 
 
 
       //100 MB chunks
       const chunkSize = 1024 * 1024 * 100
+      //860 * 1024
+      // const chunkSize = 1024 * 100
       const totalChunks = Math.ceil(file.size / chunkSize)
+      console.log(`totalChunks = ${totalChunks} fileSize = ${file.size}`);
 
 
       let start = 0
@@ -46,6 +51,7 @@ export default function Home() {
         const formdata = new FormData()
         formdata.append('filename', file.name)
         formdata.append('chunk', chunk)
+        formdata.append('uploadId', uploadID)
         formdata.append("chunkindex", chunkIndex.toString())
 
         console.log(`Uploading Chunk = ${chunkIndex + 1} of ${totalChunks}`);
@@ -56,16 +62,21 @@ export default function Home() {
             'Content-Type': 'multipart/form-data'
           }
         })
+        console.log(uploadPromise);
 
-        uploadPromises.push(uploadPromise)
+        uploadPromises.push(uploadPromise.data)
       }
 
-      await Promise.all(uploadPromises)
+      // console.log(uploadPromises)
+      const uploadResults = await Promise.all(uploadPromises)
+      // console.log(uploadResults);
+
 
       const completedRes = await axios.post("http://localhost:3000/api/v1/complete", {
         filename: file.name,
         totalChunks: totalChunks,
         uploadId: uploadID,
+        uploadResults
       })
 
       console.log(completedRes.data);
@@ -73,8 +84,6 @@ export default function Home() {
     }
     catch (err) {
       console.log("Error while doing multipart upload");
-
-
     }
   }
 

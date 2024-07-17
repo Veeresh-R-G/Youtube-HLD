@@ -7,7 +7,7 @@ const helloWorld = (req, res) => {
 
 const initialiseMultiPartUpload = async (req, res) => {
   try {
-    console.log("Multipart initialised");
+    console.log("Multipart initialising");
     const { filename } = req.body;
     console.log(filename);
 
@@ -28,12 +28,78 @@ const initialiseMultiPartUpload = async (req, res) => {
     const multipartParams = await s3
       .createMultipartUpload(createParams)
       .promise();
-    const uploadId = multipartParams.UploadId;
+    const uploadID = multipartParams.UploadId;
 
-    res.status(200).send({ uploadID: uploadId });
+    res.status(200).send({ uploadID });
   } catch (error) {
     console.log(`Couldn't Initialise Multipart Upload  ${error}`);
     res.status(500).send("Upload Initialization Failed");
+  }
+};
+
+const uploadChunk = async (req, res) => {
+  try {
+    console.log("Uploading Chunk");
+    const { filename, chunkindex, uploadId } = req.body;
+
+    const s3 = new AWS.S3({
+      region: "ap-south-1",
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    });
+
+    const chunkParams = {
+      Bucket: process.env.AWS_S3_BUCKET_NAME,
+      Key: filename,
+      UploadId: uploadId,
+      PartNumber: parseInt(chunkindex) + 1,
+      Body: req.file.buffer,
+    };
+
+    const data = await s3.uploadPart(chunkParams).promise();
+    // console.log(JSON.stringify(data));
+    console.log(`Chunk Upload ---- ${data.ETag}`);
+    res.status(200).send({
+      message: `Upload Chunk ${chunkindex} successful !!! `,
+      ETag: data?.ETag,
+    });
+  } catch (error) {
+    console.log(`Error while uploading chunk  ${error}`);
+    res.status(500).send(`Couldn't Upload chunk`);
+  }
+};
+
+const completeUpload = async (req, res) => {
+  try {
+    console.log("In Complete Phase");
+
+    const { filename, uploadId, uploadResults } = req.body;
+
+    console.log(uploadResults);
+    const s3 = new AWS.S3({
+      region: "ap-south-1",
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    });
+
+    const completeParams = {
+      Bucket: process.env.AWS_S3_BUCKET_NAME,
+      Key: filename,
+      UploadId: uploadId,
+      MultipartUpload: {
+        Parts: uploadResults.map(({ ETag }, i) => ({
+          ETag,
+          PartNumber: i + 1,
+        })),
+      },
+    };
+
+    const data = await s3.completeMultipartUpload(completeParams).promise();
+    console.log(`Upload Complete ${data}`);
+    res.status(200).send("Upload Complete");
+  } catch (error) {
+    console.log(`Error while completing upload ${error}`);
+    res.status(500).send("Couldn't Complete Upload");
   }
 };
 
@@ -83,4 +149,6 @@ module.exports = {
   uploadFileS3,
   helloWorld,
   initialiseMultiPartUpload,
+  uploadChunk,
+  completeUpload,
 };
