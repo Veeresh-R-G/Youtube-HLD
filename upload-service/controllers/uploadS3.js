@@ -95,7 +95,7 @@ const completeUpload = async (req, res) => {
     };
 
     const data = await s3.completeMultipartUpload(completeParams).promise();
-    console.log(`Upload Complete ${data}`);
+    console.log(`Upload Complete ${data.Location}`);
     res.status(200).send("Upload Complete");
   } catch (error) {
     console.log(`Error while completing upload ${error}`);
