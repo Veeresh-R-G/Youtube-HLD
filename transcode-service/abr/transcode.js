@@ -47,3 +47,7 @@ const convertToHLS = async () => {
     });
   }
 };
+
+module.exports = {
+  convertToHLS,
+};

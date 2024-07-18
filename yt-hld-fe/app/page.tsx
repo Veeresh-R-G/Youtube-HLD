@@ -122,9 +122,9 @@ export default function Home() {
 
 
         <ul>
-          <li> - Uploading Service ❌</li>
-          <li> - Watch Service ❌</li>
-          <li> - Transcoding Service ❌</li>
+          <li> - Uploading Service ✅</li>
+          <li> - Watch Service 🟨 (Can use Prisma) </li>
+          <li> - Transcoding Service ✅</li>
         </ul>
       </div>
 
