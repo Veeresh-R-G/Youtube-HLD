@@ -3,6 +3,11 @@
 
 - Kafka service : docker run -p 9092:9092 -e KAFKA_ZOOKEEPER_CONNECT=192.168.0.108:2181 -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://IP Address:9092 -e KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1 confluentinc/cp-kafka
 
+### Tech Used
+- Kafka
+- NextJs (Front End)
+- Express Js (Back End)
+
 ### Doc References
 
 - [AWS Multipart Upload](https://docs.aws.amazon.com/AmazonS3/latest/userguide/mpu-upload-object.html)
